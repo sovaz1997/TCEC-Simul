@@ -62,6 +62,28 @@ def getSchedule():
     string = response.read().decode('utf-8')
     return string
 
+def simulate(games):
+    for i in games:
+        i.simulate()
+
+def calculatePositions(games):
+    scores = {}
+
+    for i in games:
+        if i.played
+            if not i.white_engine.engine_name in result:
+                scores[i.white_engine.engine_name] = 0
+
+            if i.result == 1:
+                scores[i.white_engine.engine_name] += 1
+            elif i.result == 0:
+                scores[i.black_engine.engine_name] += 1
+            else:
+                scores[i.white_engine.engine_name] += 0.5
+                scores[i.black_engine.engine_name] += 0.5
+
+
+
 schedule = json.loads(getSchedule()) # получение расписания
 engines_names = set()
 
@@ -93,5 +115,4 @@ for i in schedule:
         else:
             games.append(Game(i['White'], i['Black'], 0.5, 1))
 
-for i in games:
-    print(i, '\n')
+
