@@ -46,8 +46,6 @@ class Game:
             self.result = 0
         else:
             self.result = 0.5
-        
-       #print(1 - (whiteWin + blackWin))
 
         self.played = True
     
@@ -159,24 +157,24 @@ for i in range(len(sys.argv)):
         options.eloDraw = int(sys.argv[i+1])
     elif sys.argv[i] == '-l':
         options.JSONLink = sys.argv[i+1]
-    elif sys.argv[i] == '-e':
+    elif sys.argv[i] == '-r':
         fromFile = True
         options.engines_file_name = sys.argv[i+1]
     elif sys.argv[i] == '-s':
         options.simulcount = int(sys.argv[i+1])
     elif sys.argv[i] == '-h':
-        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-e - local file with engine ratings\n-s - number of simulations')
+        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-r - local file with engine ratings\n-s - number of simulations')
         exit(0)
 
-schedule = json.loads(getSchedule(options.JSONLink)) # получение расписания
+schedule = json.loads(getSchedule(options.JSONLink))
 engines_names = set()
 
-# Поиск движков в файле
+# Find endines in file
 for i in schedule:
     engines_names.add(i['White'])
     engines_names.add(i['Black'])
 
-# Сопоставление движка и его рейтинга
+# Connect engines with ratings from file
 if not os.path.isfile(options.engines_file_name) or not fromFile:
     setEnginesInfo(engines_names, options.engines_file_name)
     print('Saved to', options.engines_file_name)
@@ -186,7 +184,7 @@ engines = installRatingEngines(engines_names, options.engines_file_name)
 for i in engines:
     print(engines[i])
 
-games = [] # список всех игр
+games = []
 
 playedCount = 0
 
