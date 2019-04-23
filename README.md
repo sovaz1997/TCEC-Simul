@@ -2,7 +2,7 @@
 
 TCEC Simulation (predict results)
 
-The program generates a table with a TCEC tournament prediction: engines and probabilities of place.
+The program generates a table with a TCEC tournament prediction: engines and probabilities of place, BayesElo system.
 
 ## Installation
 
