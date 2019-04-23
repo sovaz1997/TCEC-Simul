@@ -15,7 +15,7 @@ The program generates a table with a TCEC tournament prediction: engines and pro
 
 
 ## Usage
-python tcec.py [params]
+python tcecsimul.py [params]
 
 Params description (-h):
 ```
