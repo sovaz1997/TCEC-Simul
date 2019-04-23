@@ -6,9 +6,17 @@ import numpy
 import cProfile
 import os.path
 import math
+import sys
 
-eloAdvantage = 32.8
-eloDraw = 350
+class Options:
+        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000):
+            self.eloAdvantage = eloAdvantage
+            self.eloDraw = eloDraw
+            self.JSONLink = JSONLink
+            self.engines_file_name = engines_file_name
+            self.simulcount = simulcount
+
+options = Options()
 
 class Engine:
     def __init__(self, engine_name, engine_elo):
@@ -50,10 +58,10 @@ class Game:
         return 1 / (1 + 10 ** (delta / 400))
     
     def whiteProbability(self):
-        return self.function(self.black_engine.engine_elo - self.white_engine.engine_elo - eloAdvantage + eloDraw)
+        return self.function(self.black_engine.engine_elo - self.white_engine.engine_elo - options.eloAdvantage + options.eloDraw)
     
     def blackProbability(self):
-        return self.function(self.white_engine.engine_elo - self.black_engine.engine_elo + eloAdvantage + eloDraw)
+        return self.function(self.white_engine.engine_elo - self.black_engine.engine_elo + options.eloAdvantage + options.eloDraw)
 
     def __str__(self):
         res = str(self.white_engine) + '\n' + str(self.black_engine)
@@ -62,8 +70,8 @@ class Game:
         
         return res
 
-def getSchedule():
-    url = 'https://tcec.chessdom.com/schedule.json'
+def getSchedule(link):
+    url = link
     response = urlopen(url)
     string = response.read().decode('utf-8')
     return string
@@ -133,9 +141,6 @@ def setEnginesInfo(engine_names, filename):
 def installRatingEngines(engine_names, filename):
     engines = {}
 
-    if not os.path.isfile(filename):
-        setEnginesInfo(engine_names, filename)
-
     # Сопоставления движка и его рейтинга
     with open(filename, 'r') as data_file:
         data = json.load(data_file)
@@ -145,7 +150,25 @@ def installRatingEngines(engine_names, filename):
 
     return engines
 
-schedule = json.loads(getSchedule()) # получение расписания
+fromFile = False
+
+for i in range(len(sys.argv)):
+    if sys.argv[i] == '-eA':
+        options.eloAdvantage = int(sys.argv[i+1])
+    elif sys.argv[i] == '-eD':
+        options.eloDraw = int(sys.argv[i+1])
+    elif sys.argv[i] == '-l':
+        options.JSONLink = sys.argv[i+1]
+    elif sys.argv[i] == '-e':
+        fromFile = True
+        options.engines_file_name = sys.argv[i+1]
+    elif sys.argv[i] == '-s':
+        options.simulcount = int(sys.argv[i+1])
+    elif sys.argv[i] == '-h':
+        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-e - local file with engine ratings\n-s - number of simulations')
+        exit(0)
+
+schedule = json.loads(getSchedule(options.JSONLink)) # получение расписания
 engines_names = set()
 
 # Поиск движков в файле
@@ -153,10 +176,14 @@ for i in schedule:
     engines_names.add(i['White'])
     engines_names.add(i['Black'])
 
-engines = installRatingEngines(engines_names, 'engines.json')
+# Сопоставление движка и его рейтинга
+if not os.path.isfile(options.engines_file_name) or not fromFile:
+    setEnginesInfo(engines_names, options.engines_file_name)
+    print('Saved to', options.engines_file_name)
+
+engines = installRatingEngines(engines_names, options.engines_file_name)
 
 for i in engines:
-    #print(i.engine_elo)
     print(engines[i])
 
 games = [] # список всех игр
@@ -177,4 +204,4 @@ for i in schedule:
             games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1))
 
 print('Played: {}/{}'.format(playedCount, len(games)))
-makeSimulations(games, engines, 100000, playedCount)
+makeSimulations(games, engines, options.simulcount, playedCount)
