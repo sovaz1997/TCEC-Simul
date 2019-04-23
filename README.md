@@ -4,6 +4,16 @@ TCEC Simulation (predict results)
 
 The program generates a table with a TCEC tournament prediction: engines and probabilities of place.
 
+## Installation
+
++ download Python 3 from here: https://www.python.org/
++ go to folder with program and run command for install requirements:
+  ```
+  pip install -r requirements.txt
+  ```
+
+
+
 ## Usage
 python tcec.py [params]
 
