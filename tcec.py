@@ -5,9 +5,10 @@ import copy
 import numpy
 import cProfile
 import os.path
+import math
 
 eloAdvantage = 32.8
-eloDraw = 97.3
+eloDraw = 350
 
 class Engine:
     def __init__(self, engine_name, engine_elo):
@@ -15,7 +16,7 @@ class Engine:
         self.engine_elo = engine_elo
     
     def __str__(self):
-        return self.engine_name + ': ' + str(self.engine_elo)
+        return (self.engine_name + ': ' + str(self.engine_elo))
 
 class Game:
     def __init__(self, white_engine, black_engine, result=0, played=0):
@@ -33,10 +34,12 @@ class Game:
 
         if res <= goodness * whiteWin:
             self.result = 1
-        elif res <= goodness * whiteWin + goodness * blackWin:
+        elif res <= goodness * (whiteWin + blackWin):
             self.result = 0
         else:
             self.result = 0.5
+        
+       #print(1 - (whiteWin + blackWin))
 
         self.played = True
     
@@ -92,24 +95,16 @@ def calculatePositions(games):
         result.append(i[0])
 
     return result
-    
 
-def makeSimulations(games, engines, cnt):
+def makeSimulations(games, engines, cnt, playedCount):
     result = {}
 
     for i in engines:
         result[i] = numpy.zeros(len(engines))
-    print(result)
-
-    playedArray = numpy.zeros(len(games), dtype=bool)
     
-    for i in range(len(games)):
-        playedArray[i] = games[i].played
-
     for i in range(cnt):
-        for j in range(len(games)):
-            if not playedArray[j]:
-                games[j].simulate()
+        for j in range(playedCount + 1, len(games)):
+            games[j].simulate()
 
         positions = calculatePositions(games)
         
@@ -117,7 +112,6 @@ def makeSimulations(games, engines, cnt):
             result[positions[j]][j] += 1
     
     for i in sorted(result, key=lambda x: result[x].argmax()):
-        
         print("{:<30}".format(i) + ": ", end=' ')
         for j in result[i]:
             print("{:07.4f}".format(j / cnt * 100), end=' ')
@@ -162,14 +156,19 @@ for i in schedule:
 engines = installRatingEngines(engines_names, 'engines.json')
 
 for i in engines:
-    print(i)
+    #print(i.engine_elo)
+    print(engines[i])
 
 games = [] # список всех игр
+
+playedCount = 0
 
 for i in schedule:
     if not 'Result' in i:
         games.append(Game(engines[i['White']], engines[i['Black']]))
     else:
+        playedCount += 1
+
         if i['Result'] == '1-0':
             games.append(Game(engines[i['White']], engines[i['Black']], 1, 1))
         elif i['Result'] == '0-1':
@@ -177,4 +176,5 @@ for i in schedule:
         else:
             games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1))
 
-makeSimulations(games, engines, 10000)
+print('Played: {}/{}'.format(playedCount, len(games)))
+makeSimulations(games, engines, 100000, playedCount)
