@@ -9,7 +9,7 @@ The program generates a table with a TCEC tournament prediction: engines and pro
 + download Python 3 from here: https://www.python.org/
 + go to folder with program and run command for install requirements:
   ```
-  pip install -r requirements.txt
+  pip3 install -r requirements.txt
   ```
 
 
