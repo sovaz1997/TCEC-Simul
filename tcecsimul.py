@@ -7,14 +7,17 @@ import os.path
 import math
 import sys
 from progressbar import ProgressBar, Percentage, Bar, ETA
+import csv
 
 class Options:
-        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000):
+        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000, csv_filename='table.csv', csv_export=False):
             self.eloAdvantage = eloAdvantage
             self.eloDraw = eloDraw
             self.JSONLink = JSONLink
             self.engines_file_name = engines_file_name
             self.simulcount = simulcount
+            self.csv_filename = csv_filename
+            self.csv_export = csv_export
 
 options = Options()
 
@@ -121,12 +124,23 @@ def makeSimulations(games, engines, cnt, playedCount):
             result[positions[j]][j] += 1
         progress += 1
         pbar.update(progress)
+    table = []
+    engines_table = []
     
     for i in sorted(result, key=lambda x: result[x].argmax()):
+        engines_table.append(i)
+        row = []
         print("{:<30}".format(i) + ": ", end=' ')
         for j in result[i]:
-            print("{:07.4f}".format(j / cnt * 100), end=' ')
+            val = j / cnt * 100
+            writed_val = "{:07.4f}".format(val)
+            print(writed_val, end=' ')
+            row.append(writed_val)
+        table.append(row)
         print('')
+    
+    if options.csv_export:
+        saveToCSV(engines_table, table)
 
 def setEnginesInfo(engine_names, filename):
     data = {}
@@ -152,6 +166,15 @@ def installRatingEngines(engine_names, filename):
 
     return engines
 
+def saveToCSV(engines, table):
+    with open(options.csv_filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        
+        writer.writerow(['Engines\\Places'] + [i for i in range(1, len(engines) + 1)])
+
+        for i in range(len(engines)):
+            writer.writerow([engines[i]] + table[i])
+
 fromFile = False
 
 for i in range(len(sys.argv)):
@@ -166,8 +189,11 @@ for i in range(len(sys.argv)):
         options.engines_file_name = sys.argv[i+1]
     elif sys.argv[i] == '-s':
         options.simulcount = int(sys.argv[i+1])
+    elif sys.argv[i] == '-e':
+        options.csv_export = True
+        options.csv_filename = sys.argv[i+1]
     elif sys.argv[i] == '-h':
-        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-r - local file with engine ratings\n-s - number of simulations')
+        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-r - local file with engine ratings\n-s - number of simulations\n-e - export results to CSV-table')
         exit(0)
 
 schedule = json.loads(getSchedule(options.JSONLink))
