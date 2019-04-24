@@ -1,1 +1,2 @@
 numpy==1.16.1
+progressbar2==3.39.3
