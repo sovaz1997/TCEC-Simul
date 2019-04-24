@@ -308,14 +308,17 @@ for i in schedule:
     if not 'Result' in i:
         games.append(Game(engines[i['White']], engines[i['Black']]))
     else:
-        playedCount += 1
+        if i['Result'] != '*':
+            playedCount += 1
 
         if i['Result'] == '1-0':
             games.append(Game(engines[i['White']], engines[i['Black']], 1, 1))
         elif i['Result'] == '0-1':
             games.append(Game(engines[i['White']], engines[i['Black']], 0, 1))
-        else:
+        elif i['Result'] == '1/2-1/2':
             games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1))
+        else:
+            games.append(Game(engines[i['White']], engines[i['Black']], 0, 0))
 
 print('Played: {}/{}\n'.format(playedCount, len(games)))
 makeSimulations(games, engines, options.simulcount, playedCount)
