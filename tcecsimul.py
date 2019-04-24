@@ -111,7 +111,6 @@ def makeSimulations(games, engines, cnt, playedCount):
     progress, progress_maxval = 0, cnt
     pbar = ProgressBar(widgets=['Simulation processing: ', Percentage(), Bar(), ' ', ETA(), ], maxval=progress_maxval).start()
 
-
     for i in range(cnt):
         for j in range(playedCount + 1, len(games)):
             games[j].simulate()
@@ -145,7 +144,6 @@ def setEnginesInfo(engine_names, filename):
 def installRatingEngines(engine_names, filename):
     engines = {}
 
-    # Сопоставления движка и его рейтинга
     with open(filename, 'r') as data_file:
         data = json.load(data_file)
 
