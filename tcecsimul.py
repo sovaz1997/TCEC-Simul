@@ -6,6 +6,7 @@ import numpy
 import os.path
 import math
 import sys
+from progressbar import ProgressBar, Percentage, Bar, ETA
 
 class Options:
         def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000):
@@ -107,6 +108,10 @@ def makeSimulations(games, engines, cnt, playedCount):
     for i in engines:
         result[i] = numpy.zeros(len(engines))
     
+    progress, progress_maxval = 0, cnt
+    pbar = ProgressBar(widgets=['Simulation processing: ', Percentage(), Bar(), ' ', ETA(), ], maxval=progress_maxval).start()
+
+
     for i in range(cnt):
         for j in range(playedCount + 1, len(games)):
             games[j].simulate()
@@ -115,6 +120,8 @@ def makeSimulations(games, engines, cnt, playedCount):
         
         for j in range(len(positions)):
             result[positions[j]][j] += 1
+        progress += 1
+        pbar.update(progress)
     
     for i in sorted(result, key=lambda x: result[x].argmax()):
         print("{:<30}".format(i) + ": ", end=' ')
@@ -180,8 +187,10 @@ if not os.path.isfile(options.engines_file_name) or not fromFile:
 
 engines = installRatingEngines(engines_names, options.engines_file_name)
 
+print('Engines:')
 for i in engines:
     print(engines[i])
+print('')
 
 games = []
 
@@ -200,5 +209,5 @@ for i in schedule:
         else:
             games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1))
 
-print('Played: {}/{}'.format(playedCount, len(games)))
+print('Played: {}/{}\n'.format(playedCount, len(games)))
 makeSimulations(games, engines, options.simulcount, playedCount)
