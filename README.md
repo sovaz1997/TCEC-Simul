@@ -30,7 +30,8 @@ Params description (-h):
 ## Example
 You want to simulate the results of the current TCEC tournament with an accuracy of 100 000 simulations. You will use the ratings from your json file "divP.json" for TCEC Division P and export the results to a table "results.csv".
 
-Resukts after game 136 TCEC 15 Division P:
+Results after game 136 TCEC 15 Division P:
+
 |Engines\Places|1                            |2     |3                                            |4      |5      |6      |7      |8      |
 |--------------|-----------------------------|------|---------------------------------------------|-------|-------|-------|-------|-------|
 |Stockfish 19040612|99.9770                      |00.0230|00.0000                                      |00.0000|00.0000|00.0000|00.0000|00.0000|
