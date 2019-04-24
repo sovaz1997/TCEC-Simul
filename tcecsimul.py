@@ -21,10 +21,48 @@ class Options:
 
 options = Options()
 
+class Score:
+    def __init__(self):
+        self.score = 0
+        self.SB = 0
+        self.numOfWins = 0
+        self.directEncounter = 0
+        self.engine_name = ''
+    
+    def __lt__(self, other):
+        #Tiebreaks
+
+        #0. Score
+        if self.score > other.score:
+            return True
+        elif self.score < other.score:
+            return False
+
+        #1. Direct encounter
+        if self.directEncounter > other.directEncounter:
+            return True
+        elif self.directEncounter < other.directEncounter:
+            return False
+        
+        #2. Number of wins
+        if self.numOfWins > other.numOfWins:
+            return True
+        elif self.numOfWins < other.numOfWins:
+            return False
+
+        #3. SB
+        if self.SB > other.SB:
+            return True
+        elif self.SB < other.SB:
+            return False
+        
+        return True
+
 class Engine:
-    def __init__(self, engine_name, engine_elo):
+    def __init__(self, engine_name, engine_elo, id):
         self.engine_name = engine_name
         self.engine_elo = engine_elo
+        self.id = id
     
     def __str__(self):
         return (self.engine_name + ': ' + str(self.engine_elo))
@@ -81,27 +119,63 @@ def simulate(games):
     for i in games:
         i.simulate()
 
-def calculatePositions(games):
-    scores = {}
+def calculatePositions(engines, games, crosstable, roundSize):
+    scores = [Score() for i in range(len(engines))]
+
+    cnt_engines = len(engines)
+
+    index = 0
+    for i in engines:
+        scores[index].engine_name = i
+        index += 1
+
+    gameNumber = 0
 
     for i in games:
-        if i.white_engine.engine_name not in scores:
-            scores[i.white_engine.engine_name] = 0
-        if i.black_engine.engine_name not in scores:
-            scores[i.black_engine.engine_name] = 0
+        crosstable[i.white_engine.id, i.black_engine.id, int(gameNumber // roundSize)] = i.result
+        crosstable[i.black_engine.id, i.white_engine.id, int(gameNumber // roundSize)] = 1 - i.result
+        gameNumber += 1
 
-        if i.result == 1:
-            scores[i.white_engine.engine_name] += 1
-        elif i.result == 0:
-            scores[i.black_engine.engine_name] += 1
-        else:
-            scores[i.white_engine.engine_name] += 0.5
-            scores[i.black_engine.engine_name] += 0.5
+    for i in range(crosstable.shape[0]):
+        for j in range(crosstable.shape[1]):
+            for k in range(crosstable.shape[2]):
+                if crosstable[i][j][k] == 1:
+                    scores[i].score += 1
+                    scores[i].numOfWins += 1
+
+                elif crosstable[i][j][k] == 0:
+                    scores[j].score += 1
+                    scores[j].numOfWins += 1
+                else:
+                    scores[i].score += 0.5
+                    scores[j].score += 0.5
     
+    for i in range(crosstable.shape[0]):
+        for j in range(crosstable.shape[1]):
+            for k in range(crosstable.shape[2]):
+                if crosstable[i][j][k] == 1:
+                    scores[i].SB += scores[j].score
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[i].directEncounter += 1
+
+                elif crosstable[i][j][k] == 0:
+                    scores[j].SB += scores[i].score
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[j].directEncounter += 1
+                else:
+                    scores[i].SB += scores[j].score / 2
+                    scores[j].SB += scores[i].score / 2
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[i].directEncounter += 0.5
+                        scores[j].directEncounter += 0.5
+
     result = []
 
-    for i in sorted(scores.items(), key=lambda kv: kv[1], reverse=True):
-        result.append(i[0])
+    for i in sorted(scores):
+        result.append(i.engine_name)
 
     return result
 
@@ -114,11 +188,14 @@ def makeSimulations(games, engines, cnt, playedCount):
     progress, progress_maxval = 0, cnt
     pbar = ProgressBar(widgets=['Simulation processing: ', Percentage(), Bar(), ' ', ETA(), ], maxval=progress_maxval).start()
 
+    roundSize = (len(engines) * len(engines) - len(engines)) / 2
+    crosstable = numpy.zeros((len(engines), len(engines), int(len(games) / roundSize)), dtype=float)
+
     for i in range(cnt):
         for j in range(playedCount + 1, len(games)):
             games[j].simulate()
 
-        positions = calculatePositions(games)
+        positions = calculatePositions(engines, games, crosstable, roundSize)
         
         for j in range(len(positions)):
             result[positions[j]][j] += 1
@@ -126,9 +203,11 @@ def makeSimulations(games, engines, cnt, playedCount):
         pbar.update(progress)
     table = []
     engines_table = []
+    engines_ratings = []
     
     for i in sorted(result, key=lambda x: result[x].argmax()):
         engines_table.append(i)
+        engines_ratings.append(engines[i].engine_elo)
         row = []
         print("{:<30}".format(i) + ": ", end=' ')
         for j in result[i]:
@@ -140,12 +219,12 @@ def makeSimulations(games, engines, cnt, playedCount):
         print('')
     
     if options.csv_export:
-        saveToCSV(engines_table, table)
+        saveToCSV(engines_table, engines_ratings, table)
 
 def setEnginesInfo(engine_names, filename):
     data = {}
 
-    print('Введите рейтинги движков:')
+    print('Input engine ratings:')
     
     for i in engine_names:
         print(i + ": ", end='')
@@ -161,19 +240,21 @@ def installRatingEngines(engine_names, filename):
     with open(filename, 'r') as data_file:
         data = json.load(data_file)
 
+    id = 0
     for i in data:
-        engines[i] = Engine(i, data[i])
+        engines[i] = Engine(i, data[i], id)
+        id += 1
 
     return engines
 
-def saveToCSV(engines, table):
+def saveToCSV(engines, ratings, table):
     with open(options.csv_filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         
-        writer.writerow(['Engines\\Places'] + [i for i in range(1, len(engines) + 1)])
+        writer.writerow(['Engine', 'Rating'] + [i for i in range(1, len(engines) + 1)])
 
         for i in range(len(engines)):
-            writer.writerow([engines[i]] + table[i])
+            writer.writerow([engines[i], ratings[i]] + table[i])
 
 fromFile = False
 
@@ -193,7 +274,10 @@ for i in range(len(sys.argv)):
         options.csv_export = True
         options.csv_filename = sys.argv[i+1]
     elif sys.argv[i] == '-h':
-        print('-h - show help\n-eA - set elo advantage\n-eD - set elo draw\n-l - link to JSON schedule\n-r - local file with engine ratings\n-s - number of simulations\n-e - export results to CSV-table')
+        print('-h - show help', '-eA <val> - set elo advantage',\
+        '-eD <val> - set elo draw', '-l <val> - link to JSON schedule',\
+        '-r <val> - local file with engine ratings', '-s <val> - number of simulations',\
+        '-e <val> - export results to CSV-table', sep='\n')
         exit(0)
 
 schedule = json.loads(getSchedule(options.JSONLink))
