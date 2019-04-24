@@ -34,7 +34,7 @@ You want to simulate the results of the current TCEC tournament with an accuracy
 python tcecsimul.py -s 10000 -r divP.json -e results.csv
 ```
 
-Results after game 136 TCEC 15 Division P:
+Results after game 140 TCEC 15 Division P:
 
 |Engine                 |Rating|1      |2      |3      |4      |5      |6      |7      |8      |
 |-----------------------|------|-------|-------|-------|-------|-------|-------|-------|-------|
