@@ -138,25 +138,39 @@ def calculatePositions(engines, games, crosstable, roundSize):
 
     for i in range(crosstable.shape[0]):
         for j in range(crosstable.shape[1]):
-            scores[i].score += numpy.sum(crosstable[i][j])
-            scores[j].score += numpy.sum(crosstable[j][i])
-
             for k in range(crosstable.shape[2]):
                 if crosstable[i][j][k] == 1:
+                    scores[i].score += 1
                     scores[i].numOfWins += 1
 
                 elif crosstable[i][j][k] == 0:
+                    scores[j].score += 1
                     scores[j].numOfWins += 1
+                else:
+                    scores[i].score += 0.5
+                    scores[j].score += 0.5
     
     for i in range(crosstable.shape[0]):
         for j in range(crosstable.shape[1]):
             for k in range(crosstable.shape[2]):
-                scores[i].SB += scores[j].score * crosstable[i][j][k]
-                scores[j].SB += scores[i].score * crosstable[j][i][k]
+                if crosstable[i][j][k] == 1:
+                    scores[i].SB += scores[j].score
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[i].directEncounter += 1
 
-                if scores[i].score == scores[j].score:
-                    scores[i].directEncounter += crosstable[i][j][k]
-                    scores[j].directEncounter += crosstable[j][i][k]
+                elif crosstable[i][j][k] == 0:
+                    scores[j].SB += scores[i].score
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[j].directEncounter += 1
+                else:
+                    scores[i].SB += scores[j].score / 2
+                    scores[j].SB += scores[i].score / 2
+                    
+                    if scores[i].score == scores[j].score:
+                        scores[i].directEncounter += 0.5
+                        scores[j].directEncounter += 0.5
 
     result = []
 
