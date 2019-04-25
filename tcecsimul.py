@@ -28,6 +28,7 @@ class Score:
         self.numOfWins = 0
         self.directEncounter = 0
         self.engine_name = ''
+        self.disconnect_count = 0
     
     def __lt__(self, other):
         #Tiebreaks
@@ -37,20 +38,26 @@ class Score:
             return True
         elif self.score < other.score:
             return False
+        
+        #1. Disconnect count
+        if self.disconnect_count < other.disconnect_count:
+            return True
+        elif self.disconnect_count > other.disconnect_count:
+            return False
 
-        #1. Direct encounter
+        #2. Direct encounter
         if self.directEncounter > other.directEncounter:
             return True
         elif self.directEncounter < other.directEncounter:
             return False
         
-        #2. Number of wins
+        #3. Number of wins
         if self.numOfWins > other.numOfWins:
             return True
         elif self.numOfWins < other.numOfWins:
             return False
 
-        #3. SB
+        #4. SB
         if self.SB > other.SB:
             return True
         elif self.SB < other.SB:
@@ -68,11 +75,12 @@ class Engine:
         return (self.engine_name + ': ' + str(self.engine_elo))
 
 class Game:
-    def __init__(self, white_engine, black_engine, result=0, played=0):
+    def __init__(self, white_engine, black_engine, result=0, played=0, disconnect=-1):
         self.white_engine = white_engine
         self.black_engine = black_engine
         self.result = result
         self.played = played
+        self.disconnect = disconnect
     
     def simulate(self):
         goodness = 1000000000
@@ -135,6 +143,10 @@ def calculatePositions(engines, games, crosstable, roundSize):
         crosstable[i.white_engine.id, i.black_engine.id, int(gameNumber // roundSize)] = i.result
         crosstable[i.black_engine.id, i.white_engine.id, int(gameNumber // roundSize)] = 1 - i.result
         gameNumber += 1
+        if i.disconnect == 0:
+            scores[i.white_engine.id].disconnect_count += 1 
+        elif i.disconnect == 1:
+            scores[i.black_engine.id].disconnect_count += 1   
 
     for i in range(crosstable.shape[0]):
         for j in range(crosstable.shape[1]):
@@ -308,15 +320,21 @@ for i in schedule:
     if not 'Result' in i:
         games.append(Game(engines[i['White']], engines[i['Black']]))
     else:
+        crash_state = -1
+
         if i['Result'] != '*':
             playedCount += 1
+            if i['Termination'] == 'White disconnects':
+                crash_state = 0
+            elif i['Termination'] == 'Black disconnects':
+                crash_state = 1
 
         if i['Result'] == '1-0':
-            games.append(Game(engines[i['White']], engines[i['Black']], 1, 1))
+            games.append(Game(engines[i['White']], engines[i['Black']], 1, 1, crash_state))
         elif i['Result'] == '0-1':
-            games.append(Game(engines[i['White']], engines[i['Black']], 0, 1))
+            games.append(Game(engines[i['White']], engines[i['Black']], 0, 1, crash_state))
         elif i['Result'] == '1/2-1/2':
-            games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1))
+            games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1, crash_state))
         else:
             games.append(Game(engines[i['White']], engines[i['Black']], 0, 0))
 
