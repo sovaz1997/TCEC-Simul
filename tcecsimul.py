@@ -228,7 +228,7 @@ def makeSimulations(games, engines, cnt, playedCount):
     for i in avg_scores:
         avg_scores[i] /= cnt
 
-    for i in sorted(result, key=lambda x: result[x].argmax()):
+    for i in sorted(result, key=lambda x: avg_scores[x], reverse=True):
         engines_table.append(i)
         engines_ratings.append(engines[i].engine_elo)
         row = []
