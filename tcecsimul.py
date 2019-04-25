@@ -1,121 +1,17 @@
 from urllib.request import urlopen
+
 import json
-import random
 import copy
 import numpy
 import os.path
 import math
 import sys
-from progressbar import ProgressBar, Percentage, Bar, ETA
 import csv
 
-class Options:
-        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000, csv_filename='table.csv', csv_export=False):
-            self.eloAdvantage = eloAdvantage
-            self.eloDraw = eloDraw
-            self.JSONLink = JSONLink
-            self.engines_file_name = engines_file_name
-            self.simulcount = simulcount
-            self.csv_filename = csv_filename
-            self.csv_export = csv_export
-
-options = Options()
-
-class Score:
-    def __init__(self):
-        self.score = 0
-        self.SB = 0
-        self.numOfWins = 0
-        self.directEncounter = 0
-        self.engine_name = ''
-        self.disconnect_count = 0
-    
-    def __lt__(self, other):
-        #Tiebreaks
-
-        #0. Score
-        if self.score > other.score:
-            return True
-        elif self.score < other.score:
-            return False
-        
-        #1. Disconnect count
-        if self.disconnect_count < other.disconnect_count:
-            return True
-        elif self.disconnect_count > other.disconnect_count:
-            return False
-
-        #2. Direct encounter
-        if self.directEncounter > other.directEncounter:
-            return True
-        elif self.directEncounter < other.directEncounter:
-            return False
-        
-        #3. Number of wins
-        if self.numOfWins > other.numOfWins:
-            return True
-        elif self.numOfWins < other.numOfWins:
-            return False
-
-        #4. SB
-        if self.SB > other.SB:
-            return True
-        elif self.SB < other.SB:
-            return False
-        
-        return True
-
-class Engine:
-    def __init__(self, engine_name, engine_elo, id):
-        self.engine_name = engine_name
-        self.engine_elo = engine_elo
-        self.id = id
-    
-    def __str__(self):
-        return (self.engine_name + ': ' + str(self.engine_elo))
-
-class Game:
-    def __init__(self, white_engine, black_engine, result=0, played=0, disconnect=-1):
-        self.white_engine = white_engine
-        self.black_engine = black_engine
-        self.result = result
-        self.played = played
-        self.disconnect = disconnect
-    
-    def simulate(self):
-        goodness = 1000000000
-        res = random.randint(0, goodness)
-
-        whiteWin = self.whiteProbability()
-        blackWin = self.blackProbability()
-
-        if res <= goodness * whiteWin:
-            self.result = 1
-        elif res <= goodness * (whiteWin + blackWin):
-            self.result = 0
-        else:
-            self.result = 0.5
-
-        self.played = True
-    
-    def clearResult(self):
-        self.played = False
-    
-    def function(self, delta):
-        return 1 / (1 + 10 ** (delta / 400))
-    
-    def whiteProbability(self):
-        return self.function(self.black_engine.engine_elo - self.white_engine.engine_elo - options.eloAdvantage + options.eloDraw)
-    
-    def blackProbability(self):
-        return self.function(self.white_engine.engine_elo - self.black_engine.engine_elo + options.eloAdvantage + options.eloDraw)
-
-    def __str__(self):
-        res = str(self.white_engine) + '\n' + str(self.black_engine)
-        if self.played:
-            res += '\n' + str(self.result)
-        
-        return res
+from options import options
+from score import Score
+from engine import Engine
+from game import Game
 
 def getSchedule(link):
     url = link
