@@ -155,12 +155,12 @@ def calculatePositions(engines, games, crosstable, roundSize):
                     scores[i].score += 1
                     scores[i].numOfWins += 1
 
-                elif crosstable[i][j][k] == 0:
-                    scores[j].score += 1
-                    scores[j].numOfWins += 1
-                else:
+                #elif crosstable[i][j][k] == 0:
+                #    scores[j].score += 1
+                #    scores[j].numOfWins += 1
+                elif crosstable[i][j][k] == 0.5:
                     scores[i].score += 0.5
-                    scores[j].score += 0.5
+                    #scores[j].score += 0.5
     
     for i in range(crosstable.shape[0]):
         for j in range(crosstable.shape[1]):
@@ -171,28 +171,21 @@ def calculatePositions(engines, games, crosstable, roundSize):
                     if scores[i].score == scores[j].score:
                         scores[i].directEncounter += 1
 
-                elif crosstable[i][j][k] == 0:
-                    scores[j].SB += scores[i].score
-                    
-                    if scores[i].score == scores[j].score:
-                        scores[j].directEncounter += 1
-                else:
+                elif scores[i] == 0.5:
                     scores[i].SB += scores[j].score / 2
-                    scores[j].SB += scores[i].score / 2
                     
                     if scores[i].score == scores[j].score:
                         scores[i].directEncounter += 0.5
-                        scores[j].directEncounter += 0.5
-
     result = []
 
     for i in sorted(scores):
         result.append(i.engine_name)
 
-    return result
+    return result, scores
 
 def makeSimulations(games, engines, cnt, playedCount):
     result = {}
+    avg_scores = {}
 
     for i in engines:
         result[i] = numpy.zeros(len(engines))
@@ -207,21 +200,40 @@ def makeSimulations(games, engines, cnt, playedCount):
         for j in range(playedCount + 1, len(games)):
             games[j].simulate()
 
-        positions = calculatePositions(engines, games, crosstable, roundSize)
+        positions, scores = calculatePositions(engines, games, crosstable, roundSize)
         
         for j in range(len(positions)):
             result[positions[j]][j] += 1
+
+        for j in scores:
+            if not j.engine_name in avg_scores:
+                avg_scores[j.engine_name] = 0
+            avg_scores[j.engine_name] +=  j.score
+
         progress += 1
         pbar.update(progress)
     table = []
     engines_table = []
     engines_ratings = []
     
+    print('\n')
+
+    print("{:<30}".format('Engine') + ": ", end=' ')
+    print("{:<7}".format('Scores'), end=' ')
+
+    for i in range(1, len(engines) + 1):
+        print("{:<7}".format(str(i)), end=' ')
+    print('')
+
+    for i in avg_scores:
+        avg_scores[i] /= cnt
+
     for i in sorted(result, key=lambda x: result[x].argmax()):
         engines_table.append(i)
         engines_ratings.append(engines[i].engine_elo)
         row = []
         print("{:<30}".format(i) + ": ", end=' ')
+        print("{:07.4f}".format(avg_scores[i]), end = ' ')
         for j in result[i]:
             val = j / cnt * 100
             writed_val = "{:07.4f}".format(val)
@@ -231,7 +243,7 @@ def makeSimulations(games, engines, cnt, playedCount):
         print('')
     
     if options.csv_export:
-        saveToCSV(engines_table, engines_ratings, table)
+        saveToCSV(engines_table, engines_ratings, table, avg_scores)
 
 def setEnginesInfo(engine_names, filename):
     data = {}
@@ -259,14 +271,14 @@ def installRatingEngines(engine_names, filename):
 
     return engines
 
-def saveToCSV(engines, ratings, table):
+def saveToCSV(engines, ratings, table, avg_scores):
     with open(options.csv_filename, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         
-        writer.writerow(['Engine', 'Rating'] + [i for i in range(1, len(engines) + 1)])
+        writer.writerow(['Engine', 'Rating', 'Avg. Scores'] + [i for i in range(1, len(engines) + 1)])
 
         for i in range(len(engines)):
-            writer.writerow([engines[i], ratings[i]] + table[i])
+            writer.writerow([engines[i], avg_scores[engines[i]], ratings[i]] + table[i])
 
 fromFile = False
 
