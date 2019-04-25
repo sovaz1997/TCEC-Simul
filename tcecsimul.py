@@ -278,7 +278,7 @@ def saveToCSV(engines, ratings, table, avg_scores):
         writer.writerow(['Engine', 'Rating', 'Avg. Scores'] + [i for i in range(1, len(engines) + 1)])
 
         for i in range(len(engines)):
-            writer.writerow([engines[i], avg_scores[engines[i]], ratings[i]] + table[i])
+            writer.writerow([engines[i], ratings[i], avg_scores[engines[i]]] + table[i])
 
 fromFile = False
 
