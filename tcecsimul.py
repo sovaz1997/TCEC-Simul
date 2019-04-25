@@ -8,6 +8,7 @@ import math
 import sys
 import csv
 
+from progressbar import ProgressBar, Percentage, Bar, ETA
 from options import options
 from score import Score
 from engine import Engine
@@ -50,13 +51,8 @@ def calculatePositions(engines, games, crosstable, roundSize):
                 if crosstable[i][j][k] == 1:
                     scores[i].score += 1
                     scores[i].numOfWins += 1
-
-                #elif crosstable[i][j][k] == 0:
-                #    scores[j].score += 1
-                #    scores[j].numOfWins += 1
                 elif crosstable[i][j][k] == 0.5:
                     scores[i].score += 0.5
-                    #scores[j].score += 0.5
     
     for i in range(crosstable.shape[0]):
         for j in range(crosstable.shape[1]):

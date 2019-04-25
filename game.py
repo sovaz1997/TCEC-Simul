@@ -1,6 +1,5 @@
 import random
 from options import options
-from progressbar import ProgressBar, Percentage, Bar, ETA
 
 class Game:
     def __init__(self, white_engine, black_engine, result=0, played=0, disconnect=-1):
