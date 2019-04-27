@@ -8,7 +8,11 @@ import math
 import sys
 import csv
 
+from PySide2.QtWidgets import QApplication
+from PySide2.QtQuick import QQuickView
+from PySide2.QtCore import QUrl
 from progressbar import ProgressBar, Percentage, Bar, ETA
+
 from options import options
 from score import Score
 from engine import Engine
@@ -89,7 +93,7 @@ def makeSimulations(games, engines, cnt, playedCount):
     crosstable = numpy.zeros((len(engines), len(engines), int(len(games) / roundSize)), dtype=float)
 
     for i in range(cnt):
-        for j in range(playedCount + 1, len(games)):
+        for j in range(playedCount, len(games)):
             games[j].simulate()
 
         positions, scores = calculatePositions(engines, games, crosstable, roundSize)
@@ -172,6 +176,15 @@ def saveToCSV(engines, ratings, table, avg_scores):
         for i in range(len(engines)):
             writer.writerow([engines[i], ratings[i], avg_scores[engines[i]]] + table[i])
 
+'''if __name__ == "__main__":
+    app = QApplication([])
+    view = QQuickView()
+    url = QUrl("view.qml")
+
+    view.setSource(url)
+    view.show()
+    app.exec_()'''
+
 fromFile = False
 
 for i in range(len(sys.argv)):
@@ -240,6 +253,7 @@ for i in schedule:
         elif i['Result'] == '1/2-1/2':
             games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1, crash_state))
         else:
+            print(i['White'], i['Black'])
             games.append(Game(engines[i['White']], engines[i['Black']], 0, 0))
 
 print('Played: {}/{}\n'.format(playedCount, len(games)))
