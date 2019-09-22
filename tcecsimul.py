@@ -111,11 +111,11 @@ def makeSimulations(games, engines, cnt, playedCount):
     
     print('\n')
 
-    print("{:<30}".format('Engine') + ": ", end=' ')
-    print("{:<7}".format('Scores'), end=' ')
+    print("{:<36}".format('Engine') + ": ", end=' ')
+    print("{:<8}".format('Scores'), end=' ')
 
     for i in range(1, len(engines) + 1):
-        print("{:<7}".format(str(i)), end=' ')
+        print("{:<8}".format(str(i)), end=' ')
     print('')
 
     for i in avg_scores:
@@ -125,11 +125,11 @@ def makeSimulations(games, engines, cnt, playedCount):
         engines_table.append(i)
         engines_ratings.append(engines[i].engine_elo)
         row = []
-        print("{:<30}".format(i) + ": ", end=' ')
+        print("{:<36}".format(i) + ": ", end=' ')
         print("{:07.4f}".format(avg_scores[i]), end = ' ')
         for j in result[i]:
             val = j / cnt * 100
-            writed_val = "{:07.4f}".format(val)
+            writed_val = "{:08.4f}".format(val)
             print(writed_val, end=' ')
             row.append(writed_val)
         table.append(row)
