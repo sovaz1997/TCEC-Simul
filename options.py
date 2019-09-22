@@ -1,5 +1,5 @@
 class Options:
-        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec.chessdom.com/schedule.json', engines_file_name='engines.json', simulcount=10000, csv_filename='table.csv', csv_export=False):
+        def __init__(self, eloAdvantage=32.8, eloDraw=350, JSONLink='https://tcec-chess.com/schedule.json', engines_file_name='engines.json', simulcount=10000, csv_filename='table.csv', csv_export=False):
             self.eloAdvantage = eloAdvantage
             self.eloDraw = eloDraw
             self.JSONLink = JSONLink
