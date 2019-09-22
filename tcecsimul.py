@@ -173,6 +173,54 @@ def saveToCSV(engines, ratings, table, avg_scores):
         for i in range(len(engines)):
             writer.writerow([engines[i], ratings[i], avg_scores[engines[i]]] + table[i])
 
+def generateGames(schedule, state):
+    games = []
+    playedCount = 0
+    currentGame = None
+
+    for i in schedule:
+        '''
+        0 - default
+        1 - White vs. Black (current) 1-0 - simulation
+        2 - White vs. Black (current) 1/2-1/2 - simulation
+        3 - White vs. Black (current) 0-1 - simulation
+
+        '''
+        if not 'Result' in i:
+            games.append(Game(engines[i['White']], engines[i['Black']]))
+        else:
+            crash_state = -1
+
+            if i['Result'] != '*':
+                playedCount += 1
+                if i['Termination'] == 'White\'s connection stalls':
+                    crash_state = 0
+                elif i['Termination'] == 'Black\'s connection stalls':
+                    crash_state = 1
+            else:
+                if state == 0:
+                    currentGame = Game(engines[i['White']], engines[i['Black']], 1, 1, -1)
+                else:
+                    if state == 1:
+                        games.append(Game(engines[i['White']], engines[i['Black']], 1, 1, -1))
+                    elif state == 2:
+                        games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1, -1))
+                    elif state == 3:
+                        games.append(Game(engines[i['White']], engines[i['Black']], 0, 1, -1))
+                    playedCount += 1
+                    continue
+
+            if i['Result'] == '1-0':
+                games.append(Game(engines[i['White']], engines[i['Black']], 1, 1, crash_state))
+            elif i['Result'] == '0-1':
+                games.append(Game(engines[i['White']], engines[i['Black']], 0, 1, crash_state))
+            elif i['Result'] == '1/2-1/2':
+                games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1, crash_state))
+            else:
+                print(i['White'], i['Black'])
+                games.append(Game(engines[i['White']], engines[i['Black']], 0, 0))
+    return games, playedCount, currentGame
+
 fromFile = False
 
 for i in range(len(sys.argv)):
@@ -217,32 +265,24 @@ for i in engines:
     print(engines[i])
 print('')
 
-games = []
-
-playedCount = 0
-
-for i in schedule:
-    if not 'Result' in i:
-        games.append(Game(engines[i['White']], engines[i['Black']]))
-    else:
-        crash_state = -1
-
-        if i['Result'] != '*':
-            playedCount += 1
-            if i['Termination'] == 'White\'s connection stalls':
-                crash_state = 0
-            elif i['Termination'] == 'Black\'s connection stalls':
-                crash_state = 1
-
-        if i['Result'] == '1-0':
-            games.append(Game(engines[i['White']], engines[i['Black']], 1, 1, crash_state))
-        elif i['Result'] == '0-1':
-            games.append(Game(engines[i['White']], engines[i['Black']], 0, 1, crash_state))
-        elif i['Result'] == '1/2-1/2':
-            games.append(Game(engines[i['White']], engines[i['Black']], 0.5, 1, crash_state))
-        else:
-            print(i['White'], i['Black'])
-            games.append(Game(engines[i['White']], engines[i['Black']], 0, 0))
+games, playedCount, currentGame = generateGames(schedule, 0)
 
 print('Played: {}/{}\n'.format(playedCount, len(games)))
 makeSimulations(games, engines, options.simulcount, playedCount)
+
+if currentGame:
+    options.csv_export = False
+    print(4*'\n' + 'If ' + str(currentGame.white_engine) + ' vs. ' + str(currentGame.black_engine) + ' is 1-0:')
+    games, playedCount, tmp = generateGames(schedule, 1)
+    print('Played: {}/{}\n'.format(playedCount, len(games)))
+    makeSimulations(games, engines, options.simulcount, playedCount)
+
+    print(4*'\n' + 'If ' + str(currentGame.white_engine) + ' vs. ' + str(currentGame.black_engine) + ' is 1/2-1/2:')
+    games, playedCount, tmp = generateGames(schedule, 2)
+    print('Played: {}/{}\n'.format(playedCount, len(games)))
+    makeSimulations(games, engines, options.simulcount, playedCount)
+
+    print(4*'\n' + 'If ' + str(currentGame.white_engine) + ' vs. ' + str(currentGame.black_engine) + ' is 0-1:')
+    games, playedCount, tmp = generateGames(schedule, 3)
+    print('Played: {}/{}\n'.format(playedCount, len(games)))
+    makeSimulations(games, engines, options.simulcount, playedCount)
