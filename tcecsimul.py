@@ -42,7 +42,7 @@ def calculatePositions(engines, games, crosstable, roundSize):
         crosstable[i.black_engine.id, i.white_engine.id, int(gameNumber // roundSize)] = 1 - i.result
         gameNumber += 1
         if i.disconnect == 0:
-            scores[i.white_engine.id].disconnect_count += 1 
+            scores[i.white_engine.id].disconnect_count += 1
         elif i.disconnect == 1:
             scores[i.black_engine.id].disconnect_count += 1   
 
@@ -173,15 +173,6 @@ def saveToCSV(engines, ratings, table, avg_scores):
         for i in range(len(engines)):
             writer.writerow([engines[i], ratings[i], avg_scores[engines[i]]] + table[i])
 
-'''if __name__ == "__main__":
-    app = QApplication([])
-    view = QQuickView()
-    url = QUrl("view.qml")
-
-    view.setSource(url)
-    view.show()
-    app.exec_()'''
-
 fromFile = False
 
 for i in range(len(sys.argv)):
@@ -238,9 +229,9 @@ for i in schedule:
 
         if i['Result'] != '*':
             playedCount += 1
-            if i['Termination'] == 'White disconnects':
+            if i['Termination'] == 'White\'s connection stalls':
                 crash_state = 0
-            elif i['Termination'] == 'Black disconnects':
+            elif i['Termination'] == 'Black\'s connection stalls':
                 crash_state = 1
 
         if i['Result'] == '1-0':
